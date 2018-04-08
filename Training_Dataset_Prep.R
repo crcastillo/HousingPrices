@@ -28,10 +28,12 @@ Data <- fread(
 #* Rename 1stFlrSF and 2ndFlrSF
 colnames(Data)[which(colnames(Data) %in% c('1stFlrSF'
                                            , '2ndFlrSF'
+                                           , '3SsnPorch'
                                            )
                      )
                ] <- c('FirstFlrSF'
                       , 'SecondFlrSF'
+                      , 'ThreeSsnPorch'
                )
 
 

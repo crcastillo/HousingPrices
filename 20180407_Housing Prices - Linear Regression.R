@@ -13,8 +13,9 @@
 #*    - 
 #*
 #*  Notes:
-#*    - The Training data doesn't have a singular complete 
-#*    record
+#*  - The Training data doesn't have a singular complete 
+#*  record
+#*  - Replace NA in categorical factors with "_Unknown_"
 #*
 #**************************************************************
 #**************************************************************
@@ -38,7 +39,7 @@ library(dplyr)
 
 #* Import Train dataset from local folder
 Data <- fread(
-  input = "C:/Users/Chris Castillo/Data Science/Projects/House Prices - Kaggle Competition/Data/20180407_Train Data.csv"
+  input = "C:/Users/Chris Castillo/Data Science/Projects/House Prices - Kaggle Competition/HousingPrices/Data/20180407_Train Data.csv"
   , stringsAsFactors = TRUE
   , strip.white = TRUE
   , data.table = FALSE
@@ -52,12 +53,6 @@ Data$MoSold <- as.factor(Data$MoSold)
 
 
 
-#* Check for Zero Variance and Near Zero Variance factors
-ZeroVarCheck <- nearZeroVar(Data, saveMetrics = TRUE)
-ZeroVarCheck[ ZeroVarCheck[, "zeroVar"] + ZeroVarCheck[ , "nzv"] > 0, ]
-
-
-
 #* Find the list of data frame names and their respective classes 
 allClass <- function(x)
 {unlist(lapply(unclass(x), class))}
@@ -67,6 +62,7 @@ allClass <- function(x)
 #* Create a list of the columns that are class = integer 
 allClass(Data)
 Class.List <- which(allClass(Data) == "factor")
+Integer.List <- which(allClass(Data) == "integer")
 Factor.List <- match(names(Class.List), names(Data))
 
 
@@ -75,6 +71,7 @@ Factor.List <- match(names(Class.List), names(Data))
 for (i in 1:length(Factor.List)){
   
   Data[ , Factor.List[i]] <- as.character(Data[ , Factor.List[i]])
+  
   
   Data[ , Factor.List[i]][ Data[ ,Factor.List[i]] == "" ] <- "_Blank_"
   
@@ -99,11 +96,40 @@ for (i in 1:length(Factor.List)) {
   
   if (length(z[z == ""]) != 0){
     
-    print(names(Class.List)[i])
+    print(
+      paste(
+        names(Class.List)[i]
+        , "contains Blanks"
+        , sep = " "
+        )
+    )
     
   }
   
-}
+  y <- length(Data[ , Factor.List[i]][is.na(Data[ ,Factor.List[i]])])
+  
+  if (y != 0){
+    
+    print(
+      paste(
+        names(Class.List)[i]
+        , "contains NAs"
+        , sep = " "
+      )
+    )
+    
+  }
+  
+  #* Clear out temporary objects
+  rm(z, y)
+
+} ## Close main loop
+
+
+
+#* Check for Zero Variance and Near Zero Variance factors
+Data.ZeroVarCheck <- nearZeroVar(Data, saveMetrics = TRUE)
+Data.ZeroVarCheck[ Data.ZeroVarCheck[, "zeroVar"] + Data.ZeroVarCheck[ , "nzv"] > 0, ]
 
 
 
@@ -143,21 +169,73 @@ for (i in 1:length(Class.List)){
 
 
 
+#*****************************************
+#*****************************************
+##### Separate Test & Train Datasets #####
+#*****************************************
+#*****************************************
+
+
+#* Set random seed
+set.seed(10)
+#* Create a training dataset using 75% of Data
+Train.Data <- Data[ sample(1:nrow(Data)
+                           , size = round(
+                             x = 0.75 * nrow(Data)
+                             , digits = 0
+                             )
+                           , replace = FALSE
+                           )
+                    , ]
+
+
+
+#* Use the median value of integer fields to impute any NA records
+for (i in 1:length(Integer.List)){
+  
+  Train.Data[ 
+    , match(names(Integer.List)[i]
+            , names(Train.Data)
+            )
+    ][
+      is.na(
+        Train.Data[ 
+          , match(names(Integer.List)[i]
+                  , names(Train.Data)
+                  )
+          ]
+        )
+      ] <- median(
+        x = Train.Data[ 
+          , match(names(Integer.List)[i]
+                  , names(Train.Data)
+                  )
+          ]
+        , na.rm = TRUE
+        )
+  
+} #* Close loop
+
+
+
+#* Check for Zero Variance and Near Zero Variance factors
+Train.Data.ZeroVarCheck <- nearZeroVar(Data, saveMetrics = TRUE)
+Train.Data.ZeroVarCheck[ Train.Data.ZeroVarCheck[, "zeroVar"] + Train.Data.ZeroVarCheck[ , "nzv"] > 0, ]
+
+
+
 #* Create an Exclusion vector of variables that I don't want to include in the model
 Exclude <- c(
-  "Id"
-  , "Utilities"
+  #"Id"
+  #, "Utilities"
 )
 
 
 
-#* Create a training dataset
-Train.Data <- Data[ , -which(names(Data) %in% Exclude)]
-
-
-
 #* Ensure no NA rows
-Train.Data <- Train.Data[ complete.cases(Train.Data), ]
+Train.Data <- Train.Data[ complete.cases(Train.Data)
+                          , -which(names(Data) %in% Exclude)
+                          ]
 
 
 
@@ -166,8 +244,18 @@ Train.Data <- droplevels(Train.Data)
 
 
 
+#********************************************************
+#********************************************************
+##### Create Simple Linear Regression on Train Data #####
+#********************************************************
+#********************************************************
+
+
 #* Create a simple linear regression with all the available variables
 Train.lm <- lm(Train.Data$SalePrice ~ .
+               
+               - Id
+               
                , data = Train.Data
                , na.action = na.omit
                )
@@ -175,9 +263,26 @@ Train.lm <- lm(Train.Data$SalePrice ~ .
 
 
 #* Run StoreFactorLevels_Script
-source("C:/Users/Chris Castillo/Data Science/Common Scripts/R/StoreFactorLevels_Script.R"
+source("C:/Users/Chris Castillo/Data Science/Common Scripts/R_Common_Scripts/StoreFactorLevels_Script.R"
        , echo = TRUE
        )
+
+
+
+#**************************************
+#**************************************
+##### Create Test Dataset & Score #####
+#**************************************
+#**************************************
+
+
+#* Create the Test dataset using the remainder of Data not in Train.Data
+Test.Data <- Data[ !(Data$Id %in% Train.Data$Id)
+  , -which(names(Data) %in% Exclude)
+  ]
+
+
+
 
 
 
@@ -206,8 +311,8 @@ Score.Import$MoSold <- as.factor(Score.Import$MoSold)
 
 #* Create a list of the columns that are class = factor and class = integer 
 allClass(Score.Import)
-Class.List <- which(allClass(Score.Import) == "factor")
-Factor.List <- match(names(Class.List), names(Score.Import))
+Class.List.Score <- which(allClass(Score.Import) == "factor")
+Factor.List.Score <- match(names(Class.List), names(Score.Import))
 Integer.List.Score <- which(allClass(Score.Data) == "integer")
 
 
@@ -215,14 +320,14 @@ Integer.List.Score <- which(allClass(Score.Data) == "integer")
 #* Replace "" records with "_Blank_" & "NA" as "_Unknown_"
 for (i in 1:length(Factor.List)){
   
-  Score.Import[ , Factor.List[i]] <- as.character(Score.Import[ , Factor.List[i]])
+  Score.Import[ , Factor.List.Score[i]] <- as.character(Score.Import[ , Factor.List.Score[i]])
   
-  Score.Import[ , Factor.List[i]][ Score.Import[ ,Factor.List[i]] == "" ] <- "_Blank_"
+  Score.Import[ , Factor.List.Score[i]][ Score.Import[ ,Factor.List.Score[i]] == "" ] <- "_Blank_"
   
-  Score.Import[ , Factor.List[i]][is.na(Score.Import[ ,Factor.List[i]])] <- "_Unknown_"
+  Score.Import[ , Factor.List.Score[i]][is.na(Score.Import[ ,Factor.List.Score[i]])] <- "_Unknown_"
   
   
-  Score.Import[ , Factor.List[i]] <- as.factor(Score.Import[ , Factor.List[i]])
+  Score.Import[ , Factor.List.Score[i]] <- as.factor(Score.Import[ , Factor.List.Score[i]])
   
 }
 
@@ -234,9 +339,9 @@ Score.Import <- droplevels(Score.Import)
 
 
 #* Identify any factors that still have "" levels
-for (i in 1:length(Factor.List)) {
+for (i in 1:length(Factor.List.Score)) {
   
-  z <- levels(Score.Data[ , Factor.List[i]])
+  z <- levels(Score.Data[ , Factor.List.Score[i]])
   
   if (length(z[z == ""]) != 0){
     
@@ -333,7 +438,7 @@ print(Missing_Level_Factors)
 #*****************************************
 
 
-#* Append on any factor levels in the Train.Data that is not in the Score.Data (ROUND 1)
+#* Append on any factor levels in the Train.Data that is not in the Score.Data
 for (i in 1:length(Class.List.Score)){
   
   Train.Data.Level <- eval(parse(text = paste("Train.Data$", names(Class.List.Score)[i], sep = "")))
@@ -400,7 +505,7 @@ if(length(Missing_Level_Factors) > 0){
     Score.Data[ , StoreVar][ Score.Data[ , StoreVar] %in% Missing_Levels] <- sample(eval(parse(text = paste("Train.Data$", StoreVar, sep = ""))), Missing_Count, replace = TRUE)
     
   }
-}
+} ## Close loop
 
 
 
@@ -418,19 +523,36 @@ for (i in 1:length(Class.List.Score)){
 
 
 
-#*****************************************
-#*****************************************
-##### Imput Missing Numerical Values #####
-#*****************************************
-#*****************************************
+#******************************************
+#******************************************
+##### Impute Missing Numerical Values #####
+#******************************************
+#******************************************
 
 
-#* Append on any factor levels in the Train.Data that is not in the Score.Data (ROUND 1)
+#* Use the median value of integer fields within Train.Data to impute NA values within Score.Data
 for (i in 1:length(Integer.List.Score)){
   
-  Score.Data[ , match(names(Integer.List.Score)[i], names(Score.Data))][
-    is.na(Score.Data[ , match(names(Integer.List.Score)[i], names(Score.Data))])
-  ] <- median(Train.Data[ , match(names(Integer.List.Score)[i], names(Train.Data))])
+  Score.Data[ 
+    , match(names(Integer.List.Score)[i]
+            , names(Score.Data)
+            )
+    ][
+      is.na(
+        Score.Data[ 
+          , match(names(Integer.List.Score)[i]
+                  , names(Score.Data)
+                  )
+          ]
+        )
+      ] <- median(
+        x = Train.Data[ 
+          , match(names(Integer.List.Score)[i]
+                  , names(Train.Data)
+                  )
+          ]
+        , na.rm = TRUE
+        )
   
 } #* Close loop
 

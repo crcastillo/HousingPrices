@@ -14,7 +14,7 @@ library(ggplot2)
 library(plyr)
 library(dplyr)
 
-setwd("~/HousingPrices/")
+
 
 #* Import Train dataset from local folder
 Data <- fread(

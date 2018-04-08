@@ -233,14 +233,29 @@ Exclude <- c(
 
 
 #* Ensure no NA rows
-Train.Data <- Train.Data[ complete.cases(Train.Data)
-                          , -which(names(Data) %in% Exclude)
+if(exists("Exclude") & length(Exclude) != 0){
+  
+  Train.Data <- Train.Data[ complete.cases(Train.Data)
+                            , -which(names(Data) %in% Exclude)
                           ]
+
+} else {
+  
+    Train.Data <- Train.Data[ complete.cases(Train.Data), ]
+
+}
 
 
 
 #* Drop unnecessary levels
 Train.Data <- droplevels(Train.Data)
+
+
+
+#* Run StoreFactorLevels_Script
+source("C:/Users/Chris Castillo/Data Science/Common Scripts/R_Common_Scripts/StoreFactorLevels_Script.R"
+       , echo = TRUE
+)
 
 
 
@@ -262,13 +277,6 @@ Train.lm <- lm(Train.Data$SalePrice ~ .
 
 
 
-#* Run StoreFactorLevels_Script
-source("C:/Users/Chris Castillo/Data Science/Common Scripts/R_Common_Scripts/StoreFactorLevels_Script.R"
-       , echo = TRUE
-       )
-
-
-
 #**************************************
 #**************************************
 ##### Create Test Dataset & Score #####
@@ -282,7 +290,22 @@ Test.Data <- Data[ !(Data$Id %in% Train.Data$Id)
   ]
 
 
+#* Ensure no NA rows
+if(exists("Exclude") & length(Exclude) != 0){
+  
+  Test.Data <- Data[ !(Data$Id %in% Train.Data$Id)
+                     , -which(names(Data) %in% Exclude)
+                     ]
+  
+} else {
+  
+  Test.Data <- Data[ !(Data$Id %in% Train.Data$Id), ]
+  
+}
 
+
+
+#* Create Score.Import from Test.Data to be compatible for ScoreImportImputation_Script
 Score.Import <- Test.Data
 
 

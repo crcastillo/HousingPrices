@@ -1,4 +1,5 @@
 
+source("Set_WD.R")
 
 ## Load train data and handling categorical NAs and blanks
 source("Training_Dataset_Prep.R")
@@ -9,3 +10,5 @@ source("Training_Dataset_Split.R")
 ## Numerical Imputation
 source("Training_Split_Numerical_Imputation.R")
 
+## Run Linear Model Training
+source("Training_LinearModel.R")

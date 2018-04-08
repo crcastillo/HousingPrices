@@ -16,7 +16,7 @@ Train.lm <- lm(Train.Data$SalePrice ~ .
 
 
 #* Run StoreFactorLevels_Script
-source("C:/Users/Chris Castillo/Data Science/Common Scripts/R_Common_Scripts/StoreFactorLevels_Script.R"
+source("StoreFactorLevels_Script.R"
        , echo = TRUE
 )
 

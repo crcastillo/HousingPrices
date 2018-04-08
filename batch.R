@@ -12,3 +12,6 @@ source("Training_Split_Numerical_Imputation.R")
 
 ## Run Linear Model Training
 source("Training_LinearModel.R")
+
+## Run Random Forest Model
+source("Training_RandomForest.R")

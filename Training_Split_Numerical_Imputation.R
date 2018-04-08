@@ -43,9 +43,17 @@ Exclude <- c(
 
 
 #* Ensure no NA rows
-Train.Data <- Train.Data[ complete.cases(Train.Data)
-                          , -which(names(Data) %in% Exclude)
-                          ]
+if(exists("Exclude") & length(Exclude) != 0){
+  
+  Train.Data <- Train.Data[ complete.cases(Train.Data)
+                            , -which(names(Data) %in% Exclude)
+                            ]
+  
+} else {
+  
+  Train.Data <- Train.Data[ complete.cases(Train.Data), ]
+  
+}
 
 
 

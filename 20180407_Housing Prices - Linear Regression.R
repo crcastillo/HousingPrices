@@ -21,6 +21,10 @@
 #**************************************************************
 
 
+#* Repoint working directory
+setwd("C:/Users/Chris Castillo/Data Science/Projects/House Prices - Kaggle Competition/HousingPrices/")
+
+
 
 #* Clear workspace and load libraries
 rm(list=ls())
@@ -39,7 +43,7 @@ library(dplyr)
 
 #* Import Train dataset from local folder
 Data <- fread(
-  input = "C:/Users/Chris Castillo/Data Science/Projects/House Prices - Kaggle Competition/HousingPrices/Data/20180407_Train Data.csv"
+  input = "Data/20180407_Train Data.csv"
   , stringsAsFactors = TRUE
   , strip.white = TRUE
   , data.table = FALSE
@@ -285,12 +289,6 @@ Train.lm <- lm(Train.Data$SalePrice ~ .
 
 
 #* Create the Test dataset using the remainder of Data not in Train.Data
-Test.Data <- Data[ !(Data$Id %in% Train.Data$Id)
-  , -which(names(Data) %in% Exclude)
-  ]
-
-
-#* Ensure no NA rows
 if(exists("Exclude") & length(Exclude) != 0){
   
   Test.Data <- Data[ !(Data$Id %in% Train.Data$Id)
@@ -305,23 +303,52 @@ if(exists("Exclude") & length(Exclude) != 0){
 
 
 
+#* Remove any extra levels
+Test.Data <- droplevels(Test.Data)
+
+
+
 #* Create Score.Import from Test.Data to be compatible for ScoreImportImputation_Script
 Score.Import <- Test.Data
 
 
 
+#* Run ScoreImportImputation_Script
 source("C:/Users/Chris Castillo/Data Science/Common Scripts/R_Common_Scripts/ScoreImportImputation_Script.R"
        , echo = TRUE)
 
 
 
+#* Create predictions for Test dataset
+Test.Pred <- predict(object = Train.lm
+                      , newdata = Score.Data
+)
 
 
-#*************************************
-#*************************************
-##### Import and Score Test File #####
-#*************************************
-#*************************************
+
+#* Export results of Score.Pred
+Test.Export <- data.frame(
+  Id = as.numeric(Score.Import$Id)
+  , Pred_SalePrice = as.numeric(Test.Pred)
+  , SalePrice = as.numeric(Score.Import$SalePrice)
+)
+
+
+
+#* Export prediction set
+write.csv(
+  Test.Export
+  , file = "C:/Users/Chris Castillo/Data Science/Projects/House Prices - Kaggle Competition/HousingPrices/Data/20180408_Test LM Export.csv"
+  , row.names = FALSE
+)
+
+
+
+#**********************************************
+#**********************************************
+##### Import and Score Submission Dataset #####
+#**********************************************
+#**********************************************
 
 
 #* Import Test dataset from local folder
@@ -340,12 +367,10 @@ Score.Import$MoSold <- as.factor(Score.Import$MoSold)
 
 
 
+#* Run ScoreImportImputation_Script
+source("C:/Users/Chris Castillo/Data Science/Common Scripts/R_Common_Scripts/ScoreImportImputation_Script.R"
+       , echo = TRUE)
 
-#********************************************
-#********************************************
-##### Create predictions for Score.Data #####
-#********************************************
-#********************************************
 
 
 #* Create prediction set

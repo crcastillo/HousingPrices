@@ -100,8 +100,15 @@ for (i in 1:length(Factor.List.Score)) {
 
 
 #* Ensure that Score.Data removes variables that are in the Exclude list
-Score.Data = Score.Import[ , -which(names(Score.Import) %in% Exclude)]
-
+if(exists("Exclude") & length(Exclude) != 0){
+  
+  Score.Data <- Score.Import[ , -which(names(Score.Import) %in% Exclude)]
+  
+} else {
+  
+  Score.Data <- Score.Import[ , ]
+  
+}
 
 
 #* Remove any superfluous factor levels

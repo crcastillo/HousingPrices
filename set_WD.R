@@ -2,4 +2,8 @@
 
 # Change this for your own setup!!!
 
-# setwd("YOUR_USER_PATH")
+# CC: 
+# setwd("C:/Users/Chris Castillo/Data Science/Projects/House Prices - Kaggle Competition/HousingPrices/")
+
+# WW:
+setwd("~/HousingPrices/")

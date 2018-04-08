@@ -14,7 +14,6 @@ library(ggplot2)
 library(plyr)
 library(dplyr)
 
-setwd("~/HousingPrices/")
 
 #* Import Train dataset from local folder
 Data <- fread(
@@ -23,6 +22,19 @@ Data <- fread(
   , strip.white = TRUE
   , data.table = FALSE
 )
+
+
+
+#* Rename 1stFlrSF and 2ndFlrSF
+colnames(Data)[which(colnames(Data) %in% c('1stFlrSF'
+                                           , '2ndFlrSF'
+                                           )
+                     )
+               ] <- c('FirstFlrSF'
+                      , 'SecondFlrSF'
+               )
+
+
 
 #* Reclassify certain data elements
 Data$MSSubClass <- as.factor(Data$MSSubClass)
